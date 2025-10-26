@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI对话分析与HTML生成系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .chat-section {
+            padding: 30px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .result-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .chat-container {
+            height: 400px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .assistant-message {
+            background: #f1f3f4;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .message-input:focus {
+            border-color: #007bff;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #333;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .result-display {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 300px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .html-preview {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .html-preview iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+
+        /* 模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1200px;
+            height: 85%;
+            max-height: 800px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            flex: 1;
+        }
+
+        .modal-actions {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .modal-btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .chat-section {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+        
+        /* 打字指示器样式 */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #007bff;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI对话分析系统</h1>
+            <p>智能分析对话内容，生成创业方案与可视化页面</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="chat-section">
+                <h2 class="section-title">💬 对话区域</h2>
+                <div class="chat-container" id="chatContainer">
+                    <div class="message assistant-message">
+                        <strong>AI助手:</strong> 您好！我是您的AI助手，专门帮助分析创业和黑客马拉松相关的对话。请开始与我对话吧！
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="message-input" id="messageInput" placeholder="输入您的消息..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="extractRequirements()" id="extractBtn">📊 总结对话内容</button>
+                    <button class="btn btn-warning" onclick="generateHTML()" id="generateBtn">🎨 生成HTML</button>
+                    <button class="btn btn-info" onclick="generatePoster()" id="posterBtn">🎯 生成宣传海报</button>
+                    <button class="btn btn-danger" onclick="generateXiaohongshu()" id="xiaohongshuBtn">📱 发表小红书</button>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="btn" style="background: #6c757d; color: white; font-size: 0.9rem; padding: 8px 16px;" onclick="clearAllData()" title="清除所有对话历史和缓存数据">🗑️ 清除历史记录</button>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title">📋 分析结果</h2>
+                <div class="result-display" id="resultDisplay">
+                    <p style="color: #666; text-align: center; padding: 50px 20px;">
+                        分析结果将在这里显示...
+                    </p>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在处理中，请稍候...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dialogHistory = [];
+        let cachedAnalysisResult = null; // 缓存分析结果
+        let lastDialogHash = null; // 记录上次分析时的对话哈希值
+        
+        // localStorage 键名常量
+        const STORAGE_KEYS = {
+            DIALOG_HISTORY: 'ai_chat_dialog_history',
+            CACHED_ANALYSIS: 'ai_chat_cached_analysis',
+            LAST_DIALOG_HASH: 'ai_chat_last_dialog_hash',
+            MESSAGE_INPUT: 'ai_chat_message_input'
+        };
+        
+        // 保存状态到localStorage
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.DIALOG_HISTORY, JSON.stringify(dialogHistory));
+                localStorage.setItem(STORAGE_KEYS.CACHED_ANALYSIS, JSON.stringify(cachedAnalysisResult));
+                localStorage.setItem(STORAGE_KEYS.LAST_DIALOG_HASH, lastDialogHash || '');
+                
+                // 保存当前输入框内容
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    localStorage.setItem(STORAGE_KEYS.MESSAGE_INPUT, messageInput.value);
+                }
+            } catch (error) {
+                console.warn('保存状态到localStorage失败:', error);
+            }
+        }
+        
+        // 从localStorage恢复状态
+        function restoreState() {
+            try {
+                // 恢复对话历史
+                const savedDialogHistory = localStorage.getItem(STORAGE_KEYS.DIALOG_HISTORY);
+                if (savedDialogHistory) {
+                    dialogHistory = JSON.parse(savedDialogHistory);
+                    // 重新显示对话历史
+                    const chatContainer = document.getElementById('chatContainer');
+                    // 清除默认消息，但保留第一条欢迎消息
+                    const welcomeMessage = chatContainer.querySelector('.assistant-message');
+                    chatContainer.innerHTML = '';
+                    if (welcomeMessage) {
+                        chatContainer.appendChild(welcomeMessage);
+                    }
+                    
+                    // 显示保存的对话
+                    dialogHistory.forEach(msg => {
+                        displayMessage(msg.role, msg.content);
+                    });
+                }
+                
+                // 恢复分析结果
+                const savedAnalysis = localStorage.getItem(STORAGE_KEYS.CACHED_ANALYSIS);
+                if (savedAnalysis && savedAnalysis !== 'null') {
+                    cachedAnalysisResult = JSON.parse(savedAnalysis);
+                }
+                
+                // 恢复对话哈希
+                const savedHash = localStorage.getItem(STORAGE_KEYS.LAST_DIALOG_HASH);
+                if (savedHash) {
+                    lastDialogHash = savedHash;
+                }
+                
+                // 恢复输入框内容
+                const savedInput = localStorage.getItem(STORAGE_KEYS.MESSAGE_INPUT);
+                const messageInput = document.getElementById('messageInput');
+                if (savedInput && messageInput) {
+                    messageInput.value = savedInput;
+                }
+                
+                console.log('状态恢复完成');
+            } catch (error) {
+                console.warn('从localStorage恢复状态失败:', error);
+            }
+        }
+        
+        // 清除保存的状态
+        function clearSavedState() {
+            try {
+                Object.values(STORAGE_KEYS).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                console.log('已清除保存的状态');
+            } catch (error) {
+                console.warn('清除状态失败:', error);
+            }
+        }
+        
+        // 页面加载时恢复状态
+        document.addEventListener('DOMContentLoaded', function() {
+            restoreState();
+        });
+        
+        // 页面卸载前保存状态
+        window.addEventListener('beforeunload', function() {
+            saveState();
+        });
+        
+        // 定期保存状态（每30秒）
+        setInterval(saveState, 30000);
+        
+        // 跟踪当前是否有正在进行的请求
+        let currentChatRequest = null;
+        let isRequestPending = false;
+        
+        // 页面可见性变化处理
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // 页面被隐藏时，保存状态
+                saveState();
+                console.log('页面被隐藏，已保存状态');
+            } else {
+                // 页面重新可见时，检查是否有未完成的请求
+                console.log('页面重新可见');
+                if (isRequestPending && !currentChatRequest) {
+                    console.log('检测到可能中断的请求，准备重新发送');
+                    // 可以在这里添加重新发送逻辑
+                }
+            }
+        });
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+            // 输入时也保存状态
+            setTimeout(saveState, 100);
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 如果已有请求在进行中，不允许发送新请求
+            if (isRequestPending) {
+                showError('请等待当前消息处理完成');
+                return;
+            }
+            
+            // 添加用户消息到对话历史
+            dialogHistory.push({role: 'user', content: message});
+            displayMessage('user', message);
+            
+            // 当对话历史发生变化时，清除缓存的分析结果
+            cachedAnalysisResult = null;
+            lastDialogHash = null;
+            
+            input.value = '';
+            
+            // 保存状态
+            saveState();
+            
+            // 显示更详细的加载提示
+            showChatLoading();
+            
+            // 标记请求开始
+            isRequestPending = true;
+            
+            try {
+                // 创建AbortController来控制请求
+                const controller = new AbortController();
+                currentChatRequest = controller;
+                
+                // 设置超时
+                const timeoutId = setTimeout(() => {
+                    controller.abort();
+                }, 120000); // 2分钟超时
+                
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        dialog_history: dialogHistory
+                    }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('发送消息失败: ' + data.error);
+                } else {
+                    // 添加助手回复到对话历史
+                    dialogHistory.push({role: 'assistant', content: data.response});
+                    displayMessage('assistant', data.response);
+                    
+                    // 对话历史再次变化，再次清除缓存
+                    cachedAnalysisResult = null;
+                    lastDialogHash = null;
+                    
+                    // 保存更新后的状态
+                    saveState();
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showError('请求被取消或超时，请重试');
+                } else {
+                    showError('网络错误: ' + error.message);
+                }
+            } finally {
+                // 清理请求状态
+                isRequestPending = false;
+                currentChatRequest = null;
+                hideChatLoading();
+            }
+        }
+        
+        function displayMessage(role, content) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role === 'user' ? 'user-message' : 'assistant-message'}`;
+            
+            const roleText = role === 'user' ? '您' : 'AI助手';
+            messageDiv.innerHTML = `<strong>${roleText}:</strong> ${content}`;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 生成对话历史的哈希值，用于判断是否需要重新分析
+        function generateDialogHash(dialogHistory) {
+            try {
+                // 使用encodeURIComponent处理Unicode字符，然后再用btoa编码
+                const jsonString = JSON.stringify(dialogHistory);
+                const encodedString = encodeURIComponent(jsonString);
+                return btoa(encodedString).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+            } catch (error) {
+                // 如果编码失败，使用简单的字符串哈希
+                console.warn('Hash generation failed, using fallback method:', error);
+                let hash = 0;
+                const str = JSON.stringify(dialogHistory);
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 转换为32位整数
+                }
+                return Math.abs(hash).toString(36).substring(0, 32);
+            }
+        }
+        
+        async function extractRequirements() {
+            if (dialogHistory.length === 0) {
+                showError('请先进行一些对话再分析需求');
+                return;
+            }
+            
+            // 检查是否有缓存的分析结果
+            const currentDialogHash = generateDialogHash(dialogHistory);
+            if (cachedAnalysisResult && lastDialogHash === currentDialogHash) {
+                displayAnalysisResult(cachedAnalysisResult);
+                showSuccess('使用缓存的分析结果！');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/extract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({dialog: dialogHistory})
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('需求分析失败: ' + data.error);
+                } else {
+                    // 缓存分析结果
+                    cachedAnalysisResult = data.analysis;
+                    lastDialogHash = currentDialogHash;
+                    
+                    // 保存状态
+                    saveState();
+                    
+                    displayAnalysisResult(data.analysis);
+                    showSuccess('需求分析完成！');
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function generateHTML() {
+            if (dialogHistory.length === 0) {
+                showError('请先进行一些对话再生成页面');
+                return;
+            }
+            
+            // 检查是否有缓存的分析结果
+            if (!cachedAnalysisResult) {
+                showError('请先分析对话需求再生成页面');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // 优先使用缓存的分析结果
+                const response = await fetch('/generate_html', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({analysis: cachedAnalysisResult})
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('页面生成失败: ' + data.error);
+                } else {
+                    displayHTMLResult(data.html_content, data.filename);
+                    showSuccess('页面生成完成！');
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function generatePoster() {
+            if (dialogHistory.length === 0) {
+                showError('请先进行一些对话再生成宣传海报');
+                return;
+            }
+            
+            // 检查是否有缓存的分析结果
+            if (!cachedAnalysisResult) {
+                showError('请先分析对话需求再生成宣传海报');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // 调用后端生成海报接口
+                const response = await fetch('/generate_poster', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({analysis: cachedAnalysisResult})
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('海报生成失败: ' + data.error);
+                } else {
+                    displayPosterResult(data);
+                    showSuccess('宣传海报生成完成！');
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function generateXiaohongshu() {
+            if (dialogHistory.length === 0) {
+                showError('请先进行一些对话再生成小红书内容');
+                return;
+            }
+            
+            // 检查是否有缓存的分析结果
+            if (!cachedAnalysisResult) {
+                showError('请先分析对话需求再生成小红书内容');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // 直接使用缓存的分析结果，无需重新调用/extract接口
+                displayXiaohongshuResult(cachedAnalysisResult);
+                showSuccess('小红书内容生成完成！');
+                
+                // 自动弹出发布对话框
+                if (cachedAnalysisResult && cachedAnalysisResult.xiaohongshu_content) {
+                    setTimeout(() => {
+                        showPublishDialog(
+                            cachedAnalysisResult.xiaohongshu_title || '',
+                            cachedAnalysisResult.xiaohongshu_content || '',
+                            cachedAnalysisResult.image_prompt || ''
+                        );
+                    }, 1000); // 延迟1秒显示对话框
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function displayAnalysisResult(analysis) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            let html = '<h3>📊 分析结果</h3>';
+            
+            if (analysis.error) {
+                html += `<div class="error">错误: ${analysis.error}</div>`;
+            }
+            
+            // 显示各种分析结果
+            for (const [key, value] of Object.entries(analysis)) {
+                if (key !== 'error' && Array.isArray(value) && value.length > 0) {
+                    html += `<h4>${getFieldDisplayName(key)}</h4><ul>`;
+                    value.forEach(item => {
+                        html += `<li>${typeof item === 'object' ? JSON.stringify(item, null, 2) : item}</li>`;
+                    });
+                    html += '</ul>';
+                } else if (key !== 'error' && typeof value === 'string' && value) {
+                    html += `<h4>${getFieldDisplayName(key)}</h4><p>${value}</p>`;
+                }
+            }
+            
+            resultDisplay.innerHTML = html;
+        }
+        
+        // 全局变量存储当前预览的HTML信息
+        let currentPreviewData = {
+            htmlContent: '',
+            filename: '',
+            blobUrl: ''
+        };
+        
+        function displayHTMLResult(htmlContent, filename) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            
+            // 验证HTML内容
+            if (!htmlContent || htmlContent.trim() === '') {
+                showError('生成的HTML内容为空');
+                return;
+            }
+            
+            // 存储当前预览数据
+            currentPreviewData.htmlContent = htmlContent;
+            currentPreviewData.filename = filename;
+            
+            // 创建一个blob URL来预览HTML
+            const blob = new Blob([htmlContent], {type: 'text/html'});
+            const url = URL.createObjectURL(blob);
+            currentPreviewData.blobUrl = url;
+            
+            // 在右侧面板显示简单的成功信息
+            const html = `
+                <h3>🎨 HTML页面生成成功</h3>
+                <p><strong>文件名:</strong> ${filename}</p>
+                <div class="success" style="margin: 15px 0;">
+                    ✅ HTML页面已成功生成！点击下方按钮查看预览。
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="showHTMLModal()" 
+                            style="padding: 12px 24px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                        � 打开预览窗口
+                    </button>
+                </div>
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; font-weight: bold;">📄 查看HTML源码</summary>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto; margin-top: 10px; max-height: 400px; overflow-y: auto;"><code>${htmlContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                </details>
+            `;
+            
+            resultDisplay.innerHTML = html;
+            
+            // 自动打开模态窗口
+            setTimeout(() => {
+                showHTMLModal();
+            }, 500);
+        }
+        
+        function showHTMLModal() {
+            const modal = document.getElementById('htmlPreviewModal');
+            const iframe = document.getElementById('modalIframe');
+            
+            // 设置iframe源
+            iframe.src = currentPreviewData.blobUrl;
+            
+            // 显示模态窗口
+            modal.classList.add('show');
+            
+            // 防止body滚动
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeHTMLModal() {
+            const modal = document.getElementById('htmlPreviewModal');
+            const iframe = document.getElementById('modalIframe');
+            
+            // 隐藏模态窗口
+            modal.classList.remove('show');
+            
+            // 清空iframe
+            iframe.src = '';
+            
+            // 恢复body滚动
+            document.body.style.overflow = 'auto';
+            
+            // 清理blob URL
+            if (currentPreviewData.blobUrl) {
+                try {
+                    URL.revokeObjectURL(currentPreviewData.blobUrl);
+                } catch (e) {
+                    console.warn('Failed to revoke blob URL:', e);
+                }
+                currentPreviewData.blobUrl = '';
+            }
+        }
+        
+        function openModalInNewTab() {
+            if (currentPreviewData.blobUrl) {
+                window.open(currentPreviewData.blobUrl, '_blank');
+            }
+        }
+        
+        function downloadModalHTML() {
+            if (currentPreviewData.htmlContent && currentPreviewData.filename) {
+                downloadHTML(currentPreviewData.filename, currentPreviewData.htmlContent);
+            }
+        }
+        
+        function handleIframeLoad(iframe) {
+            console.log('HTML预览加载成功');
+        }
+        
+        function handleIframeError(iframe) {
+            console.error('HTML预览加载失败');
+            showError('HTML预览加载失败，请检查生成的内容');
+        }
+        
+        function displayPosterResult(data) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            
+            // 验证返回数据
+            if (!data || !data.generated_files || data.generated_files.length === 0) {
+                showError('海报生成失败，未找到生成的图片文件');
+                return;
+            }
+            
+            const generatedFiles = data.generated_files;
+            const outputDir = data.output_dir || 'output';
+            const images = data.images || [];
+            
+            // 在右侧面板显示海报生成结果
+            let html = `
+                <h3>🎯 宣传海报生成成功</h3>
+                <div class="success" style="margin: 15px 0;">
+                    ✅ 海报已成功生成！共生成 ${generatedFiles.length} 张图片。
+                </div>
+            `;
+            
+            // 显示图片预览
+            if (images && images.length > 0) {
+                html += `
+                    <div style="margin-top: 20px;">
+                        <h4>海报预览：</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+                `;
+                
+                images.forEach((image, index) => {
+                    html += `
+                        <div style="border: 2px solid #ddd; border-radius: 8px; padding: 10px; background: #f8f9fa; max-width: 300px;">
+                            <img src="data:image/png;base64,${image.base64}" 
+                                 alt="生成的海报 ${index + 1}" 
+                                 style="width: 100%; height: auto; border-radius: 4px; cursor: pointer;"
+                                 onclick="openImageModal('data:image/png;base64,${image.base64}', '${image.filename}')">
+                            <div style="margin-top: 8px; text-align: center;">
+                                <strong style="font-size: 0.9rem;">${image.filename}</strong>
+                                <br>
+                                <button onclick="downloadImage('data:image/png;base64,${image.base64}', '${image.filename}')" 
+                                        style="margin-top: 5px; padding: 4px 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                    下载图片
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div style="margin-top: 20px;">
+                    <h4>生成的海报文件：</h4>
+                    <ul style="list-style-type: none; padding: 0;">
+            `;
+            
+            generatedFiles.forEach((file, index) => {
+                html += `
+                    <li style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <strong>文件 ${index + 1}:</strong> ${file}<br>
+                        <small style="color: #666;">位置: ${outputDir}/${file}</small>
+                    </li>
+                `;
+            });
+            
+            html += `
+                    </ul>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <p style="color: #666; font-size: 0.9rem;">
+                        💡 提示：生成的海报文件已保存到 ${outputDir} 目录中
+                    </p>
+                </div>
+            `;
+            
+            resultDisplay.innerHTML = html;
+        }
+        
+        function openInNewTab(url) {
+            window.open(url, '_blank');
+        }
+        
+        function downloadHTML(filename, htmlContent) {
+            try {
+                const blob = new Blob([htmlContent], {type: 'text/html'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showSuccess('HTML文件下载成功！');
+            } catch (error) {
+                showError('下载失败: ' + error.message);
+            }
+        }
+
+        // 图片模态框功能
+        function openImageModal(imageSrc, filename) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                cursor: pointer;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 90%;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            `;
+            
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '×';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                color: white;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+                z-index: 10001;
+            `;
+            
+            const title = document.createElement('div');
+            title.innerHTML = filename;
+            title.style.cssText = `
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: white;
+                font-size: 18px;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 10px 20px;
+                border-radius: 20px;
+            `;
+            
+            modal.appendChild(img);
+            modal.appendChild(closeBtn);
+            modal.appendChild(title);
+            document.body.appendChild(modal);
+            
+            // 点击关闭
+            modal.addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+            
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.body.removeChild(modal);
+            });
+            
+            // 阻止图片点击事件冒泡
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        // 下载图片功能
+        function downloadImage(imageSrc, filename) {
+            try {
+                const a = document.createElement('a');
+                a.href = imageSrc;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showSuccess('图片下载成功！');
+            } catch (error) {
+                showError('下载失败: ' + error.message);
+            }
+        }
+        
+        function getFieldDisplayName(field) {
+            const fieldNames = {
+                'knowledge_points': '📚 知识点',
+                'solution_steps': '🔧 解决方案步骤',
+                'visualizations': '📊 可视化建议',
+                'image_prompt': '🎨 文生图提示词',
+                'html_prompt': '💻 HTML制作提示词',
+                'xiaohongshu_content': '📱 小红书文案'
+            };
+            return fieldNames[field] || field;
+        }
+        
+        function displayXiaohongshuResult(analysis) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            let html = '<h3>📱 小红书内容</h3>';
+            
+            if (analysis.xiaohongshu_content) {
+                html += `
+                    <div style="background: #fff; border: 2px solid #ff2442; border-radius: 15px; padding: 20px; margin: 15px 0;">
+                        <h4 style="color: #ff2442; margin-bottom: 15px;">📝 小红书文案</h4>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; line-height: 1.6;">
+                            ${analysis.xiaohongshu_content.replace(/\n/g, '<br>')}
+                        </div>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button onclick="copyToClipboard(${JSON.stringify(analysis.xiaohongshu_content)}, '小红书文案')" 
+                                    style="padding: 8px 16px; background: #ff2442; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                📋 复制文案
+                            </button>
+                            <button onclick="showPublishDialog(${JSON.stringify(analysis.xiaohongshu_title || '')}, ${JSON.stringify(analysis.xiaohongshu_content)}, ${JSON.stringify(analysis.image_prompt || '')})" 
+                                    style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                🚀 发布到小红书
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (analysis.image_prompt) {
+                html += `
+                    <div style="background: #fff; border: 2px solid #17a2b8; border-radius: 15px; padding: 20px; margin: 15px 0;">
+                        <h4 style="color: #17a2b8; margin-bottom: 15px;">🎨 配图提示词</h4>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; line-height: 1.6;">
+                            ${analysis.image_prompt}
+                        </div>
+                        <button onclick="copyToClipboard('${analysis.image_prompt.replace(/'/g, "\\'")}', '配图提示词')" 
+                                style="margin-top: 10px; padding: 8px 16px; background: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            📋 复制提示词
+                        </button>
+                    </div>
+                `;
+            }
+            
+            resultDisplay.innerHTML = html;
+        }
+        
+        function copyToClipboard(text, type) {
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess(`${type}已复制到剪贴板！`);
+            }).catch(() => {
+                showError('复制失败，请手动复制');
+            });
+        }
+        
+        function showInfo(message) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            resultDisplay.innerHTML = `<div style="color: #17a2b8; background: #d1ecf1; border: 1px solid #bee5eb; padding: 12px; border-radius: 8px; margin: 10px 0;">ℹ️ ${message}</div>`;
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('extractBtn').disabled = true;
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('posterBtn').disabled = true;
+            document.getElementById('xiaohongshuBtn').disabled = true;
+        }
+        
+        function showChatLoading() {
+            // 显示专门的聊天加载提示
+            const chatContainer = document.getElementById('chatContainer');
+            const loadingMessage = document.createElement('div');
+            loadingMessage.id = 'chatLoadingMessage';
+            loadingMessage.className = 'message assistant';
+            loadingMessage.innerHTML = `
+                <div class="message-content">
+                    <div style="display: flex; align-items: center; color: #666;">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span style="margin-left: 10px;">AI正在思考中，请稍候...</span>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(loadingMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 同时显示全局加载状态
+            showLoading();
+        }
+        
+        function hideChatLoading() {
+            // 移除聊天加载提示
+            const loadingMessage = document.getElementById('chatLoadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+            
+            // 隐藏全局加载状态
+            hideLoading();
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('extractBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('posterBtn').disabled = false;
+            document.getElementById('xiaohongshuBtn').disabled = false;
+        }
+        
+        function showError(message) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            resultDisplay.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+        
+        function showSuccess(message) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.innerHTML = `✅ ${message}`;
+            resultDisplay.insertBefore(successDiv, resultDisplay.firstChild);
+            
+            // 3秒后自动移除成功消息
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 3000);
+        }
+        
+        function showPublishDialog(title, content, imagePrompt) {
+            // 设置默认值用于测试
+            const defaultTitle = title || "AI创业项目分享";
+            const defaultContent = content || `🚀 最新AI创业项目分享！
+
+💡 项目亮点：
+✨ 智能对话分析系统
+✨ 自动生成HTML页面
+✨ 一键发布小红书内容
+
+🔥 技术栈：
+- Python Flask后端
+- OpenAI API集成
+- 现代化前端界面
+
+#AI创业 #黑客马拉松 #技术分享 #创新项目`;
+            
+            const defaultImages = `https://picsum.photos/800/600?random=1
+https://picsum.photos/800/600?random=2`;
+            
+            const defaultTags = "AI创业,黑客马拉松,技术分享,创新项目";
+            
+            // 创建发布对话框
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            dialog.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 20px; color: #ff2442;">🚀 发布到小红书</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">标题（最多20字）:</label>
+                        <input type="text" id="publishTitle" value="${defaultTitle}" maxlength="20" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">内容:</label>
+                        <textarea id="publishContent" rows="6" 
+                                  style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical;">${defaultContent}</textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">图片链接（每行一个）:</label>
+                        <textarea id="publishImages" rows="3" placeholder="请输入图片的HTTP/HTTPS链接，每行一个"
+                                  style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical;">${defaultImages}</textarea>
+                        <small style="color: #666;">提示：可以使用配图提示词生成图片后，将图片链接粘贴到这里</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">话题标签（可选，用逗号分隔）:</label>
+                        <input type="text" id="publishTags" value="${defaultTags}"
+                               style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button onclick="closePublishDialog()" 
+                                style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            取消
+                        </button>
+                        <button onclick="publishToXiaohongshu()" 
+                                style="padding: 10px 20px; background: #ff2442; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            发布
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            window.currentPublishDialog = dialog;
+        }
+        
+        function closePublishDialog() {
+            if (window.currentPublishDialog) {
+                document.body.removeChild(window.currentPublishDialog);
+                window.currentPublishDialog = null;
+            }
+        }
+        
+        async function publishToXiaohongshu() {
+            const title = document.getElementById('publishTitle').value.trim();
+            const content = document.getElementById('publishContent').value.trim();
+            const imagesText = document.getElementById('publishImages').value.trim();
+            const tagsText = document.getElementById('publishTags').value.trim();
+            
+            // 参数验证
+            if (!title) {
+                alert('请输入标题');
+                return;
+            }
+            if (!content) {
+                alert('请输入内容');
+                return;
+            }
+            
+            // 处理图片链接（可选）
+            const images = imagesText ? imagesText.split('\n').map(img => img.trim()).filter(img => img) : [];
+            
+            // 处理标签
+            const tags = tagsText ? tagsText.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+            
+            // 关闭对话框
+            closePublishDialog();
+            
+            // 显示加载状态
+            showLoading();
+            
+            try {
+                const response = await fetch('/publish_xiaohongshu', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        images: images,
+                        tags: tags
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('小红书发布成功！');
+                    // 显示发布结果
+                    const resultDisplay = document.getElementById('resultDisplay');
+                    const resultHtml = `
+                        <div style="background: #d4edda; border: 2px solid #c3e6cb; border-radius: 10px; padding: 20px; margin: 15px 0;">
+                            <h4 style="color: #155724; margin-bottom: 10px;">✅ 发布成功</h4>
+                            <p><strong>标题:</strong> ${title}</p>
+                            <p><strong>状态:</strong> ${data.message}</p>
+                            ${data.result ? `<p><strong>结果:</strong> ${JSON.stringify(data.result, null, 2)}</p>` : ''}
+                        </div>
+                    `;
+                    resultDisplay.innerHTML = resultHtml + resultDisplay.innerHTML;
+                } else {
+                    showError('发布失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                showError('网络错误: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 清除所有数据的函数
+        function clearAllData() {
+            if (confirm('确定要清除所有对话历史和缓存数据吗？此操作不可撤销。')) {
+                // 清除localStorage
+                clearSavedState();
+                
+                // 清除内存中的数据
+                dialogHistory = [];
+                cachedAnalysisResult = null;
+                lastDialogHash = '';
+                
+                // 清除输入框
+                document.getElementById('messageInput').value = '';
+                
+                // 清除结果显示区域
+                document.getElementById('resultDisplay').innerHTML = '';
+                
+                // 清除对话历史显示
+                document.getElementById('dialogHistory').innerHTML = '';
+                
+                // 显示成功消息
+                showSuccess('所有数据已清除');
+                
+                console.log('所有数据已清除');
+            }
+        }
+    </script>
+
+    <!-- HTML预览模态窗口 -->
+    <div id="htmlPreviewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🎨 HTML页面预览</h3>
+                <button class="modal-close" onclick="closeHTMLModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <iframe id="modalIframe" class="modal-iframe" title="HTML Preview"></iframe>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-primary" onclick="openModalInNewTab()">
+                    🔗 在新标签页中打开
+                </button>
+                <button class="modal-btn modal-btn-success" onclick="downloadModalHTML()">
+                    💾 下载HTML文件
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加点击外部关闭模态窗口的功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('htmlPreviewModal');
+            
+            // 点击模态窗口外部关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeHTMLModal();
+                }
+            });
+            
+            // ESC键关闭模态窗口
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    closeHTMLModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
